@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>寻宝之旅动画版</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+
+  .stage {
+    margin: 20px auto;
+    width: 300px;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #333;
+  }
+
+  .treasure-hunt {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+  }
+
+  .clue, .temple, .guard, .trap, .chest {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1s;
+  }
+
+  .clue {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="100%" height="100%" fill="gold"/></svg>');
+  }
+
+  .temple {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><polygon points="150,50 50,200 250,200" fill="saddlebrown"/></svg>');
+  }
+
+  .guard {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><circle cx="150" cy="150" r="50" fill="blue"/></svg>');
+  }
+
+  .trap {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><circle cx="150" cy="150" r="100" fill="red"/></svg>');
+  }
+
+  .chest {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="100%" height="100%" fill="green"/></svg>');
+  }
+
+  .message {
+    margin-top: 20px;
+    transition: opacity 0.5s;
+  }
+
+  .hidden {
+    opacity: 0;
+  }
+
+  .visible {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="treasure-hunt">
+    <div class="clue" id="clue"></div>
+    <div class="temple" id="temple"></div>
+    <div class="guard" id="guard"></div>
+    <div class="trap" id="trap"></div>
+    <div class="chest" id="chest"></div>
+  </div>
+</div>
+
+<p class="message hidden" id="message">点击开始寻宝之旅！</p>
+
+<button onclick="startAdventure()">开始冒险</button>
+
+<audio id="backgroundMusic" loop>
+  <source src="https://houzi8.com/music/1269002" type="audio/mpeg">
+  您的浏览器不支持音频元素。
+</audio>
+
+<script>
+  function displayMessage(msg) {
+    const messageElement = document.getElementById('message');
+    messageElement.textContent = msg;
+    messageElement.classList.remove('hidden');
+    messageElement.classList.add('visible');
+  }
+
+  function showStage(stageId) {
+    const stageElement = document.getElementById(stageId);
+    stageElement.style.opacity = 1;
+    setTimeout(() => {
+      stageElement.style.opacity = 0;
+    }, 1000);
+  }
+
+  async function loadStageDescription(stageId, descriptionId) {
+    try {
+      const response = await fetch(descriptionId);
+      const text = await response.text();
+      document.getElementById(stageId).innerHTML = text;
+    } catch (error) {
+      console.error('Error loading stage description:', error);
+    }
+  }
+
+  function savePlayerInfo(playerId, nickname, gameHistory) {
+    localStorage.setItem('playerId', playerId);
+    localStorage.setItem('nickname', nickname);
+    localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+  }
+
+  function loadPlayerInfo() {
+    const playerId = localStorage.getItem('playerId') || 'Player1';
+    const nickname = localStorage.getItem('nickname') || '探险者';
+    const gameHistory = JSON.parse(localStorage.getItem('gameHistory') || '[]');
+    return { playerId, nickname, gameHistory };
+  }
+
+  function updateGameHistory(newStage) {
+    const { gameHistory } = loadPlayerInfo();
+    gameHistory.push(newStage);
+    savePlayerInfo(playerId, nickname, gameHistory);
+  }
+
+  function startAdventure() {
+    const { nickname, gameHistory } = loadPlayerInfo();
+    displayMessage(`欢迎回来，${nickname}！你的游戏历史：${gameHistory.join(' -> ')}`);
+
+    document.getElementById('backgroundMusic').play(); // 播放背景音乐
+
+    loadStageDescription('clue', '"C:\Users\李乐\Desktop\wb\library.txt"');
+    showStage('clue');
+
+    setTimeout(() => {
+      displayMessage("跟随地图的指引，你来到了一座神秘的神庙...");
+      loadStageDescription('temple', '"C:\Users\李乐\Desktop\wb\temple.txt"');
+      showStage('temple');
+      updateGameHistory('图书馆');
+    }, 2000);
+
+    setTimeout(() => {
+      displayMessage("糟糕！神庙的守卫发现了你...");
+      loadStageDescription('guard', '"C:\Users\李乐\Desktop\wb\guard.txt"');
+      showStage('guard');
+
+      // 随机决定是否被守卫发现
+      const isCaught = Math.random() > 0.5; // 50%的几率被抓住
+      if (isCaught) {
+        displayMessage("不幸的是，你没能躲过守卫的眼睛...");
+        document.getElementById('backgroundMusic').pause(); // 暂停背景音乐
+        setTimeout(() => {
+          displayMessage("游戏结束。但每次失败都是下一次成功的开始。再次尝试，你一定可以的！");
+          document.getElementById('backgroundMusic').play(); // 重新开始背景音乐
+        }, 3000);
+      } else {
+        setTimeout(() => {
+          displayMessage("你机智地避开了守卫，但神庙内布满了陷阱...");
+          loadStageDescription('trap', '"C:\Users\李乐\Desktop\wb\trap.txt"');
+          showStage('trap');
+          updateGameHistory('神庙');
+        }, 3000);
+      }
+    }, 4000);
+
+    setTimeout(() => {
+      displayMessage("你巧妙地避开了所有陷阱，发现了一个金光闪闪的宝箱！");
+      loadStageDescription('chest', '"C:\Users\李乐\Desktop\wb\chest.txt"');
+      showStage('chest');
+      updateGameHistory('陷阱');
+    }, 8000);
+  }
+</script>
+
+</body>
+</html>
